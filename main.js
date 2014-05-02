@@ -1,9 +1,10 @@
-/*
- * samsaara group module
+/*!
+ * Samsaara Groups Module
+ * Copyright(c) 2013 Arjun Mehta <arjun@newlief.com>
+ * MIT Licensed
  */
 
 
-// var Group = require('./group');
 
 function grouping(options){
 
@@ -28,8 +29,9 @@ function grouping(options){
       groups[groupName] = {};
 
       if(config.redisStore === true){
-        config.redisClient.hsetnx("groups", groupName, 1, function (err, reply){  /*console.log("CREATED GROUP", groupName);*/ });
-        ipc.addIPCRoute("GRP:"+groupName+":MSG", handleGroupMessage);
+        // config.redisClient.hsetnx("groups", groupName, 1, function (err, reply){  /*console.log("CREATED GROUP", groupName);*/ });
+        // console.log("IPC MODULE", ipc);
+        ipc.addRoute(groupName+"Messages", "GRP:"+groupName+":MSG", handleGroupMessage);
       }
 
       if(typeof callBack === "function") callBack(null, true);
@@ -94,6 +96,30 @@ function grouping(options){
   }
 
 
+  function sendToGroup(groupName, packet, theCallBack){  
+
+    //publish GRP:928y:MSG CB:29871298712:PRC:276kjshj::{...}
+    //publish PRC:276kjsh:CB 29871298712::laka:ajha:lkjasalkj:jhakajh:kajhak
+
+    communication.makeCallBack(6, packet, theCallBack, function (callBackID, packetReady){
+
+      var packetPrefix;
+      
+      if(callBackID !== null){
+        packetPrefix = "PRC:"+config.uuid+":CB:"+callBackID+"::";
+        console.log(process.pid, "SENDING TO GROUP:", groupName, packetReady);
+        ipc.publish("GRP:"+groupName+":MSG", packetPrefix+packetReady);
+      }
+      else{
+        packetPrefix = "PRC:"+config.uuid+":CB:x::";
+        ipc.publish("GRP:"+groupName+":MSG", packetPrefix+packetReady);
+      }    
+
+    });
+
+  }
+
+
   /**
    * Router Methods
    */
@@ -104,7 +130,7 @@ function grouping(options){
 
     var index = message.indexOf("::");
     var groupRouteInfo = message.substr(0, index);
-    var connMessage = groupRouteInfo.slice(2+index-groupRouteInfo.length);    
+    var connMessage = message.slice(2+index-message.length);    
 
     var routeInfoSplit = groupRouteInfo.split(":");
     var callBackID = routeInfoSplit[1];
@@ -120,16 +146,16 @@ function grouping(options){
       var callBackList = "";
 
       for(connID in groups[groupName]){
-        whichOne = connections[connID];
+        whichOne = connectionController.connections[connID];
         if(whichOne.connectionClass === "native"){
           sendArray.push(whichOne);
-          callBackList += connID + ":";
+          callBackList += ":" + connID;
         }
       }
 
-      console.log("PUBLISHING CALLBACK LIST", callBackList);
+      console.log("PUBLISHING CALLBACK LIST", callBackID+callBackList);
 
-      redisPub.publish("PRC:"+processID+":CB", callBackID+":"+callBackList);
+      ipc.publish("PRC:"+processID+":CB", callBackID+callBackList);
       for(var i=0; i<sendArray.length; i++){
         communication.writeTo(sendArray[i], connMessage);
       }
@@ -138,7 +164,7 @@ function grouping(options){
     }
     else{
       for(connID in groups[groupName]){
-        whichOne = connections[connID];
+        whichOne = connectionController.connections[connID];
         if (whichOne.connectionClass === "native"){
           communication.writeTo(whichOne, connMessage);
         }
@@ -186,13 +212,13 @@ function grouping(options){
    * name, foundation, remoteMethods, connectionInitialization, connectionClose
    */
 
-  return function grouping(samsaaraCore, emitter){
+  return function grouping(samsaaraCore){
 
     // console.log(samsaaraCore,);
     config = samsaaraCore.config;
     connectionController = samsaaraCore.connectionController;
     communication = samsaaraCore.communication;
-    ipc = samsaaraCore.ipc;
+    ipc = samsaaraCore.ipcRedis;
 
     createGroup("everyone");
 
@@ -200,11 +226,13 @@ function grouping(options){
 
       name: "grouping",
 
-      foundation: {
+      foundationMethods: {
         groups: groups,
         createGroup: createGroup,
         addToGroup: addToGroup,
-        removeFromGroup: removeFromGroup
+        removeFromGroup: removeFromGroup,
+        sendToGroup: sendToGroup
+
       },
 
       remoteMethods: {

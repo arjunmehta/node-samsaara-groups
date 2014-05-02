@@ -3,22 +3,22 @@
   "private": true,
   "version": "0.0.1",
   "description": "grouping module for samsaara connections",
-  "main": "index.js",
+  "main": "main.js",
   "scripts": {
     "test": "testgroups"
   },
   "repository": {
     "type": "git",
-    "url": "git://github.com/arjunmehta/node-samsaara-grouping.git"
+    "url": "git://github.com/arjunmehta/node-samsaara-groups.git"
   },
   "keywords": [
     "samsaara",
-    "grouping"
+    "groups"
   ],
   "author": "Arjun Mehta",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/arjunmehta/node-samsaara-grouping/issues"
+    "url": "https://github.com/arjunmehta/node-samsaara-groups/issues"
   },
-  "homepage": "https://github.com/arjunmehta/node-samsaara-grouping"
+  "homepage": "https://github.com/arjunmehta/node-samsaara-groups"
 }
