@@ -1,0 +1,23 @@
+{
+  "name": "samsaara-groups",
+  "version": "0.0.1",
+  "description": "grouping module for samsaara connections",
+  "main": "index.js",
+  "scripts": {
+    "test": "testgroups"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/arjunmehta/node-samsaara-grouping.git"
+  },
+  "keywords": [
+    "samsaara",
+    "grouping"
+  ],
+  "author": "Arjun Mehta",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/arjunmehta/node-samsaara-grouping/issues"
+  },
+  "homepage": "https://github.com/arjunmehta/node-samsaara-grouping"
+}
