@@ -191,7 +191,7 @@ function grouping(options){
       for(connID in groups[groupName].members){
         // console.log("Group Message with Callback:", groups, groupName, connID);
         connection = connectionController.connections[connID];
-        if(connection.connectionClass === "native"){
+        if(connection.owner === config.uuid){
           sendArray.push(connection);
           callBackList += ":" + connID;
         }
@@ -211,7 +211,7 @@ function grouping(options){
     else{
       for(connID in groups[groupName].members){
         connection = connectionController.connections[connID];
-        if (connection.connectionClass === "native"){
+        if (connection.owner === config.uuid){
           communication.writeTo(connection, connMessage);
         }
       }
@@ -228,7 +228,10 @@ function grouping(options){
    * @attributes: {Attributes} The attributes of the SamsaaraConnection and its methods
    */
 
-  function groupingInitialzation(opts, connection, attributes){
+  function connectionInitialzation(opts, connection, attributes){
+
+    connection.groups = [];
+
     if(opts.groups !== undefined){
       console.log("Initializing Grouping.....!!!", opts.groups, connection.id);
       attributes.force("grouping");
@@ -240,7 +243,7 @@ function grouping(options){
   }
 
 
-  function groupingClosing(connection){
+  function connectionClosing(connection){
     var connID = connection.id;
 
     for(var i=0; i < connection.groups.length; i++){
@@ -277,20 +280,24 @@ function grouping(options){
         createGroup: createGroup,
         addToGroup: addToGroup,
         removeFromGroup: removeFromGroup,
-        sendToGroup: sendToGroupIPC
+        sendToGroup: sendToGroup
       },
 
       remoteMethods: {
       },
 
       connectionInitialization: {
-        grouping: groupingInitialzation
+        grouping: connectionInitialzation
       },
 
       connectionClose: {
-        grouping: groupingClosing        
+        grouping: connectionClosing        
       }
     };
+
+    if(config.interProcess === true){
+      exported.foundationMethods.sendToGroup = sendToGroupIPC;
+    }
 
     return exported;
 
