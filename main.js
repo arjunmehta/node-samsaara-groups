@@ -25,15 +25,7 @@ function grouping(options){
   function createGroup(groupName, callBack){
 
     if(groups[groupName] === undefined){
-
-      groups[groupName] = {};
-
-      if(config.redisStore === true){
-        // config.redisClient.hsetnx("groups", groupName, 1, function (err, reply){  /*console.log("CREATED GROUP", groupName);*/ });
-        // console.log("IPC MODULE", ipc);
-        ipc.addRoute(groupName+"Messages", "GRP:"+groupName+":MSG", handleGroupMessage);
-      }
-
+      groups[groupName] = { count:0, members:{} };
       if(typeof callBack === "function") callBack(null, true);
     }
     else{
@@ -41,20 +33,29 @@ function grouping(options){
     }
   }
 
-  function addToGroup(connID, groupName, callBack){
+  function addToGroup(connID, groupName){
 
-    console.log("ADD TO GROUP", connID, groupName);
+    // console.log("ADD TO GROUP", connID, groupName);
 
-    if(groups[groupName] !== undefined && groups[groupName][connID] === undefined){
-      groups[groupName][connID] = true;
+    var group = groups[groupName];
+
+    if(group !== undefined && group.members[connID] === undefined){
+
+      if(config.interProcess === true && group.count === 0){
+        ipc.addRoute(groupName+"Messages", "GRP:"+groupName+":MSG", handleGroupMessage);
+      }
+
+      group.count++;
+      group.members[connID] = true;
       connectionController.connections[connID].groups.push(groupName);
-      console.log(process.pid, moduleName, connID, "added to:", groupName);
-      if(typeof callBack === "function") callBack(null, true);
+      console.log(config.uuid, "Samsaara-Groups", connID, "added to:", groupName);
+
+      return true;
     }
     else{
-      console.log(process.pid, moduleName, connID, "trying to join Group:", groupName, ", but it does not exist!");
-      if(typeof callBack === "function") callBack(new Error("Invalid Group: " + groupName), false);
-    }
+      console.log(config.uuid, "Samsaara-Groups", connID, "trying to join Group:", groupName, ", but it does not exist!, or connection already added");
+      return false;
+    }    
   }
 
   function addToGroups(connID, groupSet, callBack){
@@ -68,10 +69,9 @@ function grouping(options){
     for(var i=0; i < groupSet.length;i++){
 
       groupName = groupSet[i];
+      var addedToGroup = addToGroup(connID, groupName);
 
-      if(groups[groupName] !== undefined && groups[groupName][connID] === undefined){
-        groups[groupName][connID] = true;
-        connectionController.connections[connID].groups.push(groupName);
+      if(addedToGroup === true){
         successSet.push(groupName);
         console.log(process.pid, connID, "Added to:", groupName);        
       }
@@ -90,30 +90,43 @@ function grouping(options){
   }
 
   function removeFromGroup(connID, groupName){
-    if(groups[groupName][connID] !== undefined){
-      delete groups[groupName][connID];
+    var group = groups[groupName];
+
+    if(group.members[connID] !== undefined){
+      group.members.count--;
+      delete group.members[connID];
+
+      if(config.interProcess === true && group.count === 0){
+        ipc.removeRoute(groupName+"Messages");
+      }
     }
+
   }
 
 
-  function sendToGroup(groupName, packet, theCallBack){  
+  function sendToGroupIPC(groupName, packet, theCallBack){  
 
-    //publish GRP:928y:MSG CB:29871298712:PRC:276kjshj::{...}
-    //publish PRC:276kjsh:CB 29871298712::laka:ajha:lkjasalkj:jhakajh:kajhak
+    //publish GRP:928y:MSG CB:29871298712:PRC:276kjshj::{...}    
 
-    communication.makeCallBack(6, packet, theCallBack, function (callBackID, packetReady){
+    ipc.store.pubsub("NUMSUB", "GRP:"+groupName+":MSG", function(err, reply){
 
-      var packetPrefix;
-      
-      if(callBackID !== null){
-        packetPrefix = "PRC:"+config.uuid+":CB:"+callBackID+"::";
-        console.log(process.pid, "SENDING TO GROUP:", groupName, packetReady);
-        ipc.publish("GRP:"+groupName+":MSG", packetPrefix+packetReady);
-      }
-      else{
-        packetPrefix = "PRC:"+config.uuid+":CB:x::";
-        ipc.publish("GRP:"+groupName+":MSG", packetPrefix+packetReady);
-      }    
+      console.log("Number subscribed to group:", groupName, ~~reply[1], reply);
+
+      communication.makeCallBack(~~reply[1], packet, theCallBack, function (callBackID, packetReady){
+
+        var packetPrefix;
+        
+        if(callBackID !== null){
+          packetPrefix = "PRC:"+config.uuid+":CB:"+callBackID+"::";
+          // console.log(process.pid, "SENDING TO GROUP:", groupName, packetReady);
+          ipc.publish("GRP:"+groupName+":MSG", packetPrefix+packetReady);
+        }
+        else{
+          packetPrefix = "PRC:"+config.uuid+":CB:x::";
+          ipc.publish("GRP:"+groupName+":MSG", packetPrefix+packetReady);
+        }    
+
+      });
 
     });
 
@@ -121,10 +134,40 @@ function grouping(options){
 
 
   /**
-   * Router Methods
+   * Send To The Group (without IPC)
+   */
+
+  function sendToGroup(groupName, packet, theCallBack){  
+
+    var connection;
+    var group = groups.members[groupName];
+
+    if(group !== undefined){
+      communication.makeCallBack(0, packet, theCallBack, function (callBackID, packetReady){
+  
+        for(var connID in group){
+          connection = connectionController.connections[connID];
+          if(callBackID !== null){
+            incomingCallBacks[callBackID].addConnection(connection.id);
+          }
+          communication.writeTo(connection, packetReady);
+        }
+      });
+    }
+    else{
+      throw new Error("Group: " + groupName + " does not exist.");
+    }
+  }
+
+
+  /**
+   * Router Methods (With IPC)
    */
 
   function handleGroupMessage(channel, message){
+
+    //channel looks like GRP:everyone:MSG
+    //message looks like CB:2987129dsf8712:PRC:276kjshj::{...}
 
     var groupName = channel.split(":")[1];
 
@@ -133,40 +176,43 @@ function grouping(options){
     var connMessage = message.slice(2+index-message.length);    
 
     var routeInfoSplit = groupRouteInfo.split(":");
-    var callBackID = routeInfoSplit[1];
-    var processID = routeInfoSplit[3];
+    var processID = routeInfoSplit[1];
+    var callBackID = routeInfoSplit[3];
 
-    var connID, whichOne;
+    var connID, connection;
 
-    console.log("GROUP MESSAGE:", groupName, callBackID, processID);
+    console.log("Group Message:", groupName, callBackID, processID);
     
     if(callBackID !== "x"){
 
       var sendArray = [];
       var callBackList = "";
 
-      for(connID in groups[groupName]){
-        whichOne = connectionController.connections[connID];
-        if(whichOne.connectionClass === "native"){
-          sendArray.push(whichOne);
+      for(connID in groups[groupName].members){
+        // console.log("Group Message with Callback:", groups, groupName, connID);
+        connection = connectionController.connections[connID];
+        if(connection.connectionClass === "native"){
+          sendArray.push(connection);
           callBackList += ":" + connID;
         }
       }
 
-      console.log("PUBLISHING CALLBACK LIST", callBackID+callBackList);
+      console.log(config.uuid, "Publishing Callback List", processID, callBackID+callBackList);
 
-      ipc.publish("PRC:"+processID+":CB", callBackID+callBackList);
+      //publish message looks like PRC:276kjsh:CB 29871298712::laka:ajha:lkjasalkj:jhakajh:kajhak
+
+      ipc.sendCallBackList(processID, callBackID, callBackList);
+
       for(var i=0; i<sendArray.length; i++){
         communication.writeTo(sendArray[i], connMessage);
       }
 
-      // What happens if a connection drops in the middle of this process?
     }
     else{
-      for(connID in groups[groupName]){
-        whichOne = connectionController.connections[connID];
-        if (whichOne.connectionClass === "native"){
-          communication.writeTo(whichOne, connMessage);
+      for(connID in groups[groupName].members){
+        connection = connectionController.connections[connID];
+        if (connection.connectionClass === "native"){
+          communication.writeTo(connection, connMessage);
         }
       }
     }    
@@ -197,9 +243,9 @@ function grouping(options){
   function groupingClosing(connection){
     var connID = connection.id;
 
-    for(var key in groups){
-      if(groups[key][connID] !== undefined){
-        delete groups[key][connID];
+    for(var i=0; i < connection.groups.length; i++){
+      if(groups[connection.groups[i]].members[connID] !== undefined){
+        delete groups[connection.groups[i]].members[connID];
       }
     }
   }
@@ -231,8 +277,7 @@ function grouping(options){
         createGroup: createGroup,
         addToGroup: addToGroup,
         removeFromGroup: removeFromGroup,
-        sendToGroup: sendToGroup
-
+        sendToGroup: sendToGroupIPC
       },
 
       remoteMethods: {
