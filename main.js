@@ -140,7 +140,7 @@ function grouping(options){
   function sendToGroup(groupName, packet, theCallBack){  
 
     var connection;
-    var group = groups.members[groupName];
+    var group = groups[groupName].members;
 
     if(group !== undefined){
       communication.makeCallBack(0, packet, theCallBack, function (callBackID, packetReady){
@@ -148,7 +148,7 @@ function grouping(options){
         for(var connID in group){
           connection = connectionController.connections[connID];
           if(callBackID !== null){
-            incomingCallBacks[callBackID].addConnection(connection.id);
+            communication.incomingCallBacks[callBackID].addConnection(connection.id);
           }
           communication.writeTo(connection, packetReady);
         }
@@ -246,9 +246,11 @@ function grouping(options){
   function connectionClosing(connection){
     var connID = connection.id;
 
-    for(var i=0; i < connection.groups.length; i++){
-      if(groups[connection.groups[i]].members[connID] !== undefined){
-        delete groups[connection.groups[i]].members[connID];
+    if(connection.groups){    
+      for(var i=0; i < connection.groups.length; i++){
+        if(groups[connection.groups[i]].members[connID] !== undefined){
+          delete groups[connection.groups[i]].members[connID];
+        }
       }
     }
   }
