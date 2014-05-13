@@ -1,6 +1,6 @@
 /*!
  * Samsaara Groups Module
- * Copyright(c) 2013 Arjun Mehta <arjun@newlief.com>
+ * Copyright(c) 2014 Arjun Mehta <arjun@newlief.com>
  * MIT Licensed
  */
 
@@ -55,11 +55,11 @@ function grouping(options){
     else{
       console.log(config.uuid, "Samsaara-Groups", connID, "trying to join Group:", groupName, ", but it does not exist!, or connection already added");
       return false;
-    }    
+    }
   }
 
   function addToGroups(connID, groupSet, callBack){
-    
+
     var err = null,
         errSet = [],
         successSet = [];
@@ -73,7 +73,7 @@ function grouping(options){
 
       if(addedToGroup === true){
         successSet.push(groupName);
-        console.log(process.pid, connID, "Added to:", groupName);        
+        console.log(process.pid, connID, "Added to:", groupName);
       }
       else{
         errSet.push(groupName);
@@ -86,7 +86,7 @@ function grouping(options){
     }
 
     if(typeof callBack === "function") callBack(err, true);
-    
+
   }
 
   function removeFromGroup(connID, groupName){
@@ -104,9 +104,9 @@ function grouping(options){
   }
 
 
-  function sendToGroupIPC(groupName, packet, theCallBack){  
+  function sendToGroupIPC(groupName, packet, theCallBack){
 
-    //publish GRP:928y:MSG CB:29871298712:PRC:276kjshj::{...}    
+    //publish GRP:928y:MSG CB:29871298712:PRC:276kjshj::{...}
 
     ipc.store.pubsub("NUMSUB", "GRP:"+groupName+":MSG", function(err, reply){
 
@@ -115,7 +115,7 @@ function grouping(options){
       communication.makeCallBack(~~reply[1], packet, theCallBack, function (callBackID, packetReady){
 
         var packetPrefix;
-        
+
         if(callBackID !== null){
           packetPrefix = "PRC:"+config.uuid+":CB:"+callBackID+"::";
           // console.log(process.pid, "SENDING TO GROUP:", groupName, packetReady);
@@ -124,7 +124,7 @@ function grouping(options){
         else{
           packetPrefix = "PRC:"+config.uuid+":CB:x::";
           ipc.publish("GRP:"+groupName+":MSG", packetPrefix+packetReady);
-        }    
+        }
 
       });
 
@@ -137,14 +137,14 @@ function grouping(options){
    * Send To The Group (without IPC)
    */
 
-  function sendToGroup(groupName, packet, theCallBack){  
+  function sendToGroup(groupName, packet, theCallBack){
 
     var connection;
     var group = groups[groupName].members;
 
     if(group !== undefined){
       communication.makeCallBack(0, packet, theCallBack, function (callBackID, packetReady){
-  
+
         for(var connID in group){
           connection = connectionController.connections[connID];
           if(callBackID !== null){
@@ -173,7 +173,7 @@ function grouping(options){
 
     var index = message.indexOf("::");
     var groupRouteInfo = message.substr(0, index);
-    var connMessage = message.slice(2+index-message.length);    
+    var connMessage = message.slice(2+index-message.length);
 
     var routeInfoSplit = groupRouteInfo.split(":");
     var processID = routeInfoSplit[1];
@@ -182,7 +182,7 @@ function grouping(options){
     var connID, connection;
 
     console.log("Group Message:", groupName, callBackID, processID);
-    
+
     if(callBackID !== "x"){
 
       var sendArray = [];
@@ -215,7 +215,7 @@ function grouping(options){
           communication.writeTo(connection, connMessage);
         }
       }
-    }    
+    }
   }
 
 
@@ -246,7 +246,7 @@ function grouping(options){
   function connectionClosing(connection){
     var connID = connection.id;
 
-    if(connection.groups){    
+    if(connection.groups){
       for(var i=0; i < connection.groups.length; i++){
         if(groups[connection.groups[i]].members[connID] !== undefined){
           delete groups[connection.groups[i]].members[connID];
@@ -273,6 +273,8 @@ function grouping(options){
 
     createGroup("everyone");
 
+    samsaaraCore.addClientFileRoute("samsaara-groups.js", __dirname + '/client/samsaara-groups.js');
+
     var exported = {
 
       name: "grouping",
@@ -293,7 +295,7 @@ function grouping(options){
       },
 
       connectionClose: {
-        grouping: connectionClosing        
+        grouping: connectionClosing
       }
     };
 
