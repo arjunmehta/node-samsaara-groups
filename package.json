@@ -4,6 +4,9 @@
   "version": "0.0.1",
   "description": "grouping module for samsaara connections",
   "main": "main.js",
+  "dependencies": {
+    "debug" : "~0.8.1"
+  },
   "scripts": {
     "test": "testgroups"
   },

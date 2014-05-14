@@ -4,7 +4,7 @@
  * MIT Licensed
  */
 
-
+var debug = require('debug')('samsaara:groups');
 
 function grouping(options){
 
@@ -35,7 +35,7 @@ function grouping(options){
 
   function addToGroup(connID, groupName){
 
-    // console.log("ADD TO GROUP", connID, groupName);
+    // debug("ADD TO GROUP", connID, groupName);
 
     var group = groups[groupName];
 
@@ -48,12 +48,12 @@ function grouping(options){
       group.count++;
       group.members[connID] = true;
       connectionController.connections[connID].groups.push(groupName);
-      console.log(config.uuid, "Samsaara-Groups", connID, "added to:", groupName);
+      debug("addToGroup New group member", connID, "added to:", groupName);
 
       return true;
     }
     else{
-      console.log(config.uuid, "Samsaara-Groups", connID, "trying to join Group:", groupName, ", but it does not exist!, or connection already added");
+      debug("addToGroup Failed adding group member", connID, "trying to join Group:", groupName, ", but it does not exist!, or connection already added");
       return false;
     }
   }
@@ -73,11 +73,11 @@ function grouping(options){
 
       if(addedToGroup === true){
         successSet.push(groupName);
-        console.log(process.pid, connID, "Added to:", groupName);
+        debug("addToGroups New group member", connID, "added to:", groupName);
       }
       else{
         errSet.push(groupName);
-        console.log(process.pid, connID, "Error joining group:", groupName);
+        debug("addToGroups Failed adding group member", connID, "trying to join Group:", groupName, ", but it does not exist!, or connection already added");
       }
     }
 
@@ -110,7 +110,7 @@ function grouping(options){
 
     ipc.store.pubsub("NUMSUB", "GRP:"+groupName+":MSG", function(err, reply){
 
-      console.log("Number subscribed to group:", groupName, ~~reply[1], reply);
+      debug("sendToGroupIPC Number subscribed to group:", config.uuid, groupName, ~~reply[1], reply);
 
       communication.makeCallBack(~~reply[1], packet, theCallBack, function (callBackID, packetReady){
 
@@ -118,7 +118,7 @@ function grouping(options){
 
         if(callBackID !== null){
           packetPrefix = "PRC:"+config.uuid+":CB:"+callBackID+"::";
-          // console.log(process.pid, "SENDING TO GROUP:", groupName, packetReady);
+          // debug(process.pid, "SENDING TO GROUP:", groupName, packetReady);
           ipc.publish("GRP:"+groupName+":MSG", packetPrefix+packetReady);
         }
         else{
@@ -181,7 +181,7 @@ function grouping(options){
 
     var connID, connection;
 
-    console.log("Group Message:", groupName, callBackID, processID);
+    debug("Group Message", config.uuid, groupName, callBackID, processID);
 
     if(callBackID !== "x"){
 
@@ -189,7 +189,7 @@ function grouping(options){
       var callBackList = "";
 
       for(connID in groups[groupName].members){
-        // console.log("Group Message with Callback:", groups, groupName, connID);
+        // debug("Group Message with Callback:", groups, groupName, connID);
         connection = connectionController.connections[connID];
         if(connection.owner === config.uuid){
           sendArray.push(connection);
@@ -197,7 +197,7 @@ function grouping(options){
         }
       }
 
-      console.log(config.uuid, "Publishing Callback List", processID, callBackID+callBackList);
+      debug("Publishing Callback List", config.uuid, processID, callBackID+callBackList);
 
       //publish message looks like PRC:276kjsh:CB 29871298712::laka:ajha:lkjasalkj:jhakajh:kajhak
 
@@ -233,7 +233,7 @@ function grouping(options){
     connection.groups = [];
 
     if(opts.groups !== undefined){
-      console.log("Initializing Grouping.....!!!", opts.groups, connection.id);
+      debug("Initializing Grouping.....!!!", opts.groups, connection.id);
       attributes.force("grouping");
       opts.groups.push('everyone');
       addToGroups(connection.id, opts.groups, function (err, addedGroups){
@@ -265,7 +265,7 @@ function grouping(options){
 
   return function grouping(samsaaraCore){
 
-    // console.log(samsaaraCore,);
+    // debug(samsaaraCore,);
     config = samsaaraCore.config;
     connectionController = samsaaraCore.connectionController;
     communication = samsaaraCore.communication;
