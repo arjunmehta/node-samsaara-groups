@@ -85,7 +85,7 @@ function grouping(options){
       err = new Error(errSet);
     }
 
-    if(typeof callBack === "function") callBack(err, true);
+    if(typeof callBack === "function") callBack(err, successSet);
 
   }
 
@@ -237,6 +237,7 @@ function grouping(options){
       attributes.force("grouping");
       opts.groups.push('everyone');
       addToGroups(connection.id, opts.groups, function (err, addedGroups){
+        debug("Initialization Add to Groups", err, addedGroups);
         attributes.initialized(null, "grouping");
       });
     }
