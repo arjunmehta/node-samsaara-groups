@@ -22,13 +22,13 @@ function initialize(samsaaraCore, groupsObj){
   config = samsaaraCore.config;
   connectionController = samsaaraCore.connectionController;
   communication = samsaaraCore.communication;
-
   connections = connectionController.connections;
   
   groups = groupsObj;
 
   return LocalGroup;
 }
+
 
 
 function LocalGroup(groupName){
@@ -83,12 +83,12 @@ LocalGroup.prototype.execute = function(packet, callback){
   var connection;
   var groupMembers = this.members;
 
-  communication.makeCallBack(0, packet, callback, function (callBackID, packetReady){
+  communication.makeCallBack(0, packet, callback, function (incomingCallBack, packetReady){
 
     for(var connID in groupMembers){
       connection = connections[connID];
-      if(callBackID !== null){
-        communication.incomingCallBacks[callBackID].addConnection(connection.id);
+      if(incomingCallBack !== null){
+        incomingCallBack.addConnection(connection.id);
       }
       connection.write(packetReady);
     }

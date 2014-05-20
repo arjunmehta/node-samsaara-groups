@@ -24,7 +24,6 @@ function grouping(options){
 
   var createGroup;
 
-
   function group(groupName){
     if(groups[groupName]){
       return groups[groupName];
@@ -45,11 +44,8 @@ function grouping(options){
     // need to consider ipc here.
 
     if(groups[groupName] === undefined){
-
       groups[groupName] = new GlobalGroup(groupName, memberArray); // new Group(groupName)
-
       if(typeof callBack === "function") callBack(null, true);
-
     }
     else{
       if(typeof callBack === "function") callBack(new Error("Group Already Exists"), false);
@@ -66,25 +62,24 @@ function grouping(options){
    * @attributes: {Attributes} The attributes of the SamsaaraConnection and its methods
    */
 
-  function connectionInitialzation(opts, connection, attributes){
+  function connectionInitialization(opts, connection, attributes){
 
     connection.groups = {};
 
     if(opts.groups !== undefined){
+
       debug("Initializing Grouping.....!!!", opts.groups, connection.id);
-      attributes.force("grouping");
+
+      attributes.force("groups");
       opts.groups.push('everyone');
 
-
       var groupsAdded = {};
-
       for (var i = 0; i < opts.groups.length; i++) {
         groupsAdded[opts.groups[i]] = group(opts.groups[i]).add(connection);
       }
-
       debug("Initialization Add to Groups", groupsAdded);
-      attributes.initialized(null, "grouping");
 
+      attributes.initialized(null, "groups");
     }
   }
 
@@ -117,9 +112,9 @@ function grouping(options){
     ipc = samsaaraCore.ipc;
 
     LocalGroup = require('./localgroup').initialize(samsaaraCore, groups);
-    GlobalGroup = require('./globalgroup').initialize(samsaaraCore, groups);    
+    GlobalGroup = require('./globalgroup').initialize(samsaaraCore, groups);
 
-    if(config.interProcess === true){
+    if(samsaaraCore.capability.ipc === true){
       createGroup = createGlobalGroup;
     }
     else{
@@ -134,18 +129,15 @@ function grouping(options){
 
       name: "groups",
 
-      foundationMethods: {
+      main: {
         group: group,   
         createGroup: createGroup,     
         createGlobalGroup: createGlobalGroup,
         createLocalGroup: createLocalGroup
       },
 
-      remoteMethods: {
-      },
-
       connectionInitialization: {
-        grouping: connectionInitialzation
+        grouping: connectionInitialization
       },
 
       connectionClose: {
