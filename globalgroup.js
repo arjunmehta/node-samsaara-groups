@@ -6,8 +6,8 @@
 
 var debug = require('debug')('samsaara:groups:globalgroup');
 
-var samsaara,
-    processUuid,
+var core,
+    samsaara,
     connectionController,
     connections,
     communication,
@@ -19,15 +19,16 @@ var groups;
 
 function initialize(samsaaraCore, groupsObj){
 
+  core = samsaaraCore;
   samsaara = samsaaraCore.samsaara;
   config = samsaaraCore.config;
   connectionController = samsaaraCore.connectionController;
   communication = samsaaraCore.communication;
   ipc = samsaaraCore.ipc;
-  interProcess = samsaaraCore.capability.ipc;
-  processUuid = samsaaraCore.uuid;
 
   connections = connectionController.connections;
+
+  interProcess = samsaaraCore.capability.ipc; 
 
   groups = groupsObj;
 
@@ -84,7 +85,6 @@ GlobalGroup.prototype.remove = function(connection){
   if(interProcess === true && this.count === 0){
     ipc.removeRoute(this.id+"Messages");
   }
-
 };
 
 
@@ -95,26 +95,24 @@ GlobalGroup.prototype.execute = function(packet, callback){
 
   ipc.store.pubsub("NUMSUB", "GRP:"+groupName+":MSG", function(err, reply){
 
-    debug("sendToGroupIPC Number subscribed to group:", processUuid, groupName, ~~reply[1], reply);
+    debug("sendToGroupIPC Number subscribed to group:", core.uuid, groupName, ~~reply[1], reply);
 
     communication.makeCallBack(~~reply[1], packet, callback, function (incomingCallBack, packetReady){
 
       var packetPrefix;
 
       if(incomingCallBack !== null){
-        packetPrefix = "PRC:"+processUuid+":CB:"+incomingCallBack.id+"::";
+        packetPrefix = "PRC:"+core.uuid+":CB:"+incomingCallBack.id+"::";
         // debug(process.pid, "SENDING TO GROUP:", groupName, packetReady);
         ipc.publish("GRP:"+groupName+":MSG", packetPrefix+packetReady);
       }
       else{
-        packetPrefix = "PRC:"+processUuid+":CB:x::";
+        packetPrefix = "PRC:"+core.uuid+":CB:x::";
         ipc.publish("GRP:"+groupName+":MSG", packetPrefix+packetReady);
       }
 
     });
-
   });
-
 };
 
 
@@ -125,7 +123,7 @@ GlobalGroup.prototype.write = function(message){
   for(var i=0; i<this.members.length; i++){
     connection = connections[this.members[i]];
 
-    if(connection && connection.owner === processUuid){
+    if(connection && connection.owner === core.uuid){
       connection.write(message);
     }
   }
@@ -154,7 +152,7 @@ function handleGroupExecute(channel, message){
 
   var connID, connection;
 
-  debug("Group Message", processUuid, groupName, callBackID, processID);
+  debug("Group Message", core.uuid, groupName, callBackID, processID);
 
   if(callBackID !== "x"){
 
@@ -166,13 +164,13 @@ function handleGroupExecute(channel, message){
       connection = samsaara.connection(connID);
       debug("Group Message with Callback:", groups[groupName].members, groupName, connID);
      
-      if(connection.owner === processUuid){
+      if(connection.owner === core.uuid){
         sendArray.push(connection);
         callBackList += ":" + connID;
       }
     }
 
-    debug("Publishing Callback List", processUuid, processID, callBackID+callBackList);
+    debug("Publishing Callback List", core.uuid, processID, callBackID+callBackList);
 
     //publish message looks like PRC:276kjsh:CB 29871298712::laka:ajha:lkjasalkj:jhakajh:kajhak
 
@@ -186,7 +184,7 @@ function handleGroupExecute(channel, message){
   else{
     for(connID in groups[groupName].members){
       connection = samsaara.connection(connID);
-      if (connection.owner === processUuid){
+      if (connection.owner === core.uuid){
         connection.write(connMessage);
       }
     }

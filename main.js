@@ -25,9 +25,7 @@ function grouping(options){
   var createGroup;
 
   function group(groupName){
-    if(groups[groupName]){
-      return groups[groupName];
-    }
+    return groups[groupName];
   }
 
   function createLocalGroup(groupName, memberArray){
