@@ -88,30 +88,100 @@ GlobalGroup.prototype.remove = function(connection){
 };
 
 
-GlobalGroup.prototype.execute = function(packet, callback){
+
+
+
+GlobalGroup.prototype.execute = function(){
   
   var connection;
+  var groupMembers = this.members;  
+  var packet = {func: arguments[0], args: []};
+
+  communication.processPacket(0, packet, arguments, function (incomingCallBack, packetReady){
+
+    for(var connID in groupMembers){
+      connection = connections[connID];
+      if(incomingCallBack !== null){
+        incomingCallBack.addConnection(connection.id);
+      }
+      connection.write(packetReady);
+    }
+
+  });
+};
+
+
+// creates a namespace object that holds an execute method with the namespace as a closure..
+
+GlobalGroup.prototype.nameSpace = function(nameSpaceName){
+
+  var groupName = this.id;  
+
+  return {
+    execute: function execute(){
+      var packet = {ns:nameSpaceName, func: arguments[0], args: []};
+      executeOnGroup(groupName, packet, arguments);
+    }
+  };
+};
+
+
+GlobalGroup.prototype.execute = function(){
+  
   var groupName = this.id;
+  var packet = {func: arguments[0], args: []};
+  executeOnGroup(groupName, packet, arguments);
+};
+
+
+function executeOnGroup(groupName, packet, args){
 
   ipc.store.pubsub("NUMSUB", "GRP:"+groupName+":MSG", function(err, reply){
 
     debug("sendToGroupIPC Number subscribed to group:", core.uuid, groupName, ~~reply[1], reply);
 
-    communication.makeCallBack(~~reply[1], packet, callback, function (incomingCallBack, packetReady){
+    if(~~reply[1] > 0){ //if any process even has a member of this group and is subscribed to the group channel
 
-      var packetPrefix;
+      communication.processPacket(~~reply[1], packet, args, function (incomingCallBack, packetReady){
 
-      if(incomingCallBack !== null){
-        packetPrefix = "PRC:"+core.uuid+":CB:"+incomingCallBack.id+"::";
-        // debug(process.pid, "SENDING TO GROUP:", groupName, packetReady);
-        ipc.publish("GRP:"+groupName+":MSG", packetPrefix+packetReady);
+        var packetPrefix;
+
+        if(incomingCallBack !== null){
+          packetPrefix = "PRC:"+core.uuid+":CB:"+incomingCallBack.id+"::";
+          ipc.publish("GRP:"+groupName+":MSG", packetPrefix+packetReady);
+        }
+        else{
+          packetPrefix = "PRC:"+core.uuid+":CB:x::";
+          ipc.publish("GRP:"+groupName+":MSG", packetPrefix+packetReady);
+        }
+      });      
+    }
+  });
+}
+
+
+GlobalGroup.prototype.executeRaw = function(packet, callback){
+  
+  var groupName = this.id;
+  var args = arguments;
+
+  ipc.store.pubsub("NUMSUB", "GRP:"+groupName+":MSG", function (err, reply){
+
+    if(~~reply[1] > 0){
+
+      debug("sendToGroupIPC Number subscribed to group:", core.uuid, groupName, ~~reply[1], reply);
+
+      if(typeof callback === "function"){
+        communication.makeCallBack(~~reply[1], packet, callback, function (incomingCallBack, packetReady){
+          var packetPrefix = "PRC:"+core.uuid+":CB:"+incomingCallBack.id+"::";          
+          ipc.publish("GRP:"+groupName+":MSG", packetPrefix+packetReady);
+        });
       }
       else{
-        packetPrefix = "PRC:"+core.uuid+":CB:x::";
-        ipc.publish("GRP:"+groupName+":MSG", packetPrefix+packetReady);
+        var packetPrefix = "PRC:"+core.uuid+":CB:x::";
+        ipc.publish("GRP:"+groupName+":MSG", packetPrefix+JSON.stringify([core.uuid, packet]));
       }
-
-    });
+    }
   });
 };
 

@@ -78,12 +78,35 @@ LocalGroup.prototype.remove = function(connection){
 };
 
 
-LocalGroup.prototype.execute = function(packet, callback){
+// creates a namespace object that holds an execute method with the namespace as a closure..
+
+LocalGroup.prototype.nameSpace = function(nameSpaceName){
+
+  var connection;
+  var groupMembers = this.members; 
+
+  return {
+    execute: function execute(){
+      var packet = {ns:nameSpaceName, func: arguments[0], args: []};
+      excuteOnGroup(groupMembers, packet, arguments);
+    }
+  };
+};
+
+
+LocalGroup.prototype.execute = function(){
   
   var connection;
-  var groupMembers = this.members;
+  var groupMembers = this.members;  
+  var packet = {func: arguments[0], args: []};
 
-  communication.makeCallBack(0, packet, callback, function (incomingCallBack, packetReady){
+  excuteOnGroup(groupMembers, packet, arguments);
+};
+
+
+function excuteOnGroup(groupMembers, packet, args){
+
+  communication.processPacket(0, packet, args, function (incomingCallBack, packetReady){
 
     for(var connID in groupMembers){
       connection = connections[connID];
@@ -93,6 +116,33 @@ LocalGroup.prototype.execute = function(packet, callback){
       connection.write(packetReady);
     }
   });
+}
+
+LocalGroup.prototype.executeRaw = function(packet, callback){
+  
+  var connection;
+  var groupMembers = this.members;
+
+
+  if(typeof callback === "function"){
+
+    communication.makeCallBack(0, packet, callback, function (incomingCallBack, packetReady){
+      for(var connID in groupMembers){
+        connection = connections[connID];
+        if(incomingCallBack !== null){
+          incomingCallBack.addConnection(connection.id);
+        }
+        connection.write(packetReady);
+      }
+    });
+  }
+  else{
+
+    var packetReady = JSON.stringify([samsaaraCore.uuid, packet]);
+    for(var connID in groupMembers){
+      connections[connID].write(packetReady);
+    }
+  } 
 };
 
 
