@@ -18,24 +18,19 @@ var createGroup;
 
 
 var groupController = {
-
   name: "groups",
-
   main: {
     group: group,
     createGroup: createGroup,
     createGlobalGroup: createGlobalGroup,
     createLocalGroup: createLocalGroup
   },
-
   connectionInitialization: {
     grouping: connectionInitialization
   },
-
   connectionClose: {
     grouping: connectionClosing
   },
-
   constructors: {}
 };
 
