@@ -58,7 +58,7 @@ function initialize(samsaaraCore){
     createGroup = groupController.main.createGroup = createGlobalGroup;
   }
   else{
-    createGroup = groupController.main.createGroup = screateLocalGroup;
+    createGroup = groupController.main.createGroup = createLocalGroup;
   }
   createGroup("everyone");
 
@@ -115,22 +115,21 @@ function createGlobalGroup(groupName, memberArray, callBack){
 function connectionInitialization(opts, connection, attributes){
 
   connection.groups = {};
+  var connectionGroups = opts.groups || [];
 
-  if(opts.groups !== undefined){
+  debug("Initializing Grouping.....!!!", connectionGroups, connection.id);
 
-    debug("Initializing Grouping.....!!!", opts.groups, connection.id);
+  attributes.force("groups");
+  connectionGroups.push('everyone');
 
-    attributes.force("groups");
-    opts.groups.push('everyone');
-
-    var groupsAdded = {};
-    for (var i = 0; i < opts.groups.length; i++) {
-      groupsAdded[opts.groups[i]] = group(opts.groups[i]).add(connection);
-    }
-    debug("Initialization Add to Groups", groupsAdded);
-
-    attributes.initialized(null, "groups");
+  var groupsAdded = {};
+  for (var i = 0; i < connectionGroups.length; i++) {
+    groupsAdded[connectionGroups[i]] = group(connectionGroups[i]).add(connection);
   }
+  debug("Initialization Add to Groups", groupsAdded);
+
+  attributes.initialized(null, "groups");
+
 }
 
 
