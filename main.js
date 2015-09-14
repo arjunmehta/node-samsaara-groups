@@ -1,148 +1,123 @@
 /*!
- * Samsaara Groups Module
+ * Samsaara Local Group Constructor
  * Copyright(c) 2014 Arjun Mehta <arjun@newlief.com>
  * MIT Licensed
  */
 
-var debug = require('debug')('samsaara:groups:main');
+var debug = require('debugit').add('samsaara:groups:Group');
+
+var samsaara;
+var executionController;
 
 
-var connectionController,
-    communication,
-    ipc;
+function initialize(core, executionCtrl) {
+    samsaara = core;
+    executionController = executionCtrl;
 
-var LocalGroup, GlobalGroup,
-    groups = {};
-
-var createGroup;
+    return Group;
+}
 
 
-var groupController = {
-  name: "groups",
-  main: {
-    group: group,
-    createGroup: createGroup,
-    createGlobalGroup: createGlobalGroup,
-    createLocalGroup: createLocalGroup
-  },
-  connectionInitialization: {
-    grouping: connectionInitialization
-  },
-  connectionClose: {
-    grouping: connectionClosing
-  },
-  constructors: {}
+function Group(groupName, members) {
+
+    if (Array.isArray(members)) {
+        members = convertToObj(members);
+    }
+
+    this.members = members || {};
+    this.id = groupName;
+    this.count = Object.keys(this.members).length;
+}
+
+
+Group.prototype.add = function(connection) {
+
+    var connectionID = connection.id;
+    var groupName = this.id;
+
+    if (this.members[connectionID] === undefined) {
+
+        this.count++;
+        this.members[connectionID] = true;
+        connection.groups[groupName] = true;
+
+        connection.nameSpace('groups').execute('addedToGroup')(this.id);
+
+        debug('Member', connectionID, 'added to:', groupName);
+
+        return true;
+    }
+
+    return false;
+};
+
+Group.prototype.remove = function(connection) {
+
+    var connectionID = connection.id;
+
+    if (this.members[connectionID] !== undefined) {
+        connection.groups[this.id] = false;
+        this.members[connectionID] = undefined;
+        this.count--;
+    }
+};
+
+// creates a namespace object that holds an execute method with the namespace as a closure..
+
+Group.prototype.nameSpace = function(namespaceName) {
+
+    var memberList = this.memberArray;
+    var _this = this;
+
+    return {
+        execute: function(funcName) {
+            executionController.execute(_this, 'GRP', memberList, namespaceName, funcName, arguments);
+        }
+    };
+};
+
+Group.prototype.execute = function(funcName) {
+    executionController.execute(this, 'GRP', this.memberArray, 'core', funcName, arguments);
+};
+
+Group.prototype.except = function(exceptionArray) {
+
+    var membersList = Object.keys(this.members);
+    var filteredMembers = membersList.filter(function(value) {
+        if (exceptionArray.indexOf(value) === -1) {
+            return value;
+        }
+    });
+
+    return new Group('filtered_' + this.id, filteredMembers);
+};
+
+Group.prototype.send = function(packet) {
+    var connectionID;
+    var members = this.members;
+
+    for (connectionID in members) {
+        if (members[connectionID] !== undefined) {
+            samsaara.connection(connectionID).socket.send(packet);
+        }
+    }
 };
 
 
-// the root interface loaded by require. Options are pass in options here.
+function convertToObj(array) {
 
-function main(opts){
-  return initialize;
-}
+    var obj = {};
+    var i;
 
-
-// samsaara will call this method when it's ready to load it into its middleware stack
-// return your main
-
-function initialize(samsaaraCore){
-
-  connectionController = samsaaraCore.connectionController;
-  communication = samsaaraCore.communication;
-  ipc = samsaaraCore.ipc;
-
-  LocalGroup = require('./localgroup').initialize(samsaaraCore, groups);
-  GlobalGroup = require('./globalgroup').initialize(samsaaraCore, groups);
-
-  if(samsaaraCore.capability.ipc === true){
-    createGroup = groupController.main.createGroup = createGlobalGroup;
-  }
-  else{
-    createGroup = groupController.main.createGroup = createLocalGroup;
-  }
-  createGroup("everyone");
-
-  samsaaraCore.addClientFileRoute("samsaara-groups.js", __dirname + '/client/samsaara-groups.js');
-
-  groupController.constructors = {
-    LocalGroup: LocalGroup,
-    GlobalGroup: GlobalGroup
-  };
-
-  return groupController;
-}
-
-
-// Foundation Methods
-
-function group(groupName){
-  return groups[groupName];
-}
-
-
-function createLocalGroup(groupName, memberArray){
-  if(groups[groupName] === undefined){
-    groups[groupName] = new LocalGroup(groupName, memberArray);
-  }
-
-  return groups[groupName];
-}
-
-
-function createGlobalGroup(groupName, memberArray, callBack){
-
-  // need to consider ipc here.
-
-  if(groups[groupName] === undefined){
-    groups[groupName] = new GlobalGroup(groupName, memberArray); // new Group(groupName)
-    if(typeof callBack === "function") callBack(null, true);
-  }
-  else{
-    if(typeof callBack === "function") callBack(new Error("Group Already Exists"), false);
-  }
-}
-
-
-/**
- * Connection Initialization Methods
- * Called for every new connection
- *
- * @opts: {Object} contains the connection's options
- * @connection: {SamsaaraConnection} the connection that is initializing
- * @attributes: {Attributes} The attributes of the SamsaaraConnection and its methods
- */
-
-function connectionInitialization(opts, connection, attributes){
-
-  connection.groups = {};
-  var connectionGroups = opts.groups || [];
-
-  debug("Initializing Grouping.....!!!", connectionGroups, connection.id);
-
-  attributes.force("groups");
-  connectionGroups.push('everyone');
-
-  var groupsAdded = {};
-  for (var i = 0; i < connectionGroups.length; i++) {
-    groupsAdded[connectionGroups[i]] = group(connectionGroups[i]).add(connection);
-  }
-  debug("Initialization Add to Groups", groupsAdded);
-
-  attributes.initialized(null, "groups");
-
-}
-
-
-function connectionClosing(connection){
-  var connID = connection.id;
-
-  if(connection.groups){
-    debug("Disconnecting Client", connID, connection.groups);
-    for(var groupName in connection.groups){
-      group(groupName).remove(connection);
+    for (i = 0; i < array.length; i++) {
+        obj[array[i]] = true;
     }
-  }
+
+    return obj;
 }
 
 
-module.exports = exports = main;
+module.exports = exports = {
+    initialize: initialize,
+    Constructor: Group
+};

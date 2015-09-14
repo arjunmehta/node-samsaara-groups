@@ -1,37 +1,40 @@
 {
-  "name": "samsaara-groups",
-  "private": true,
-  "version": "0.0.1",
-  "description": "grouping module for samsaara connections",
-  "main": "main.js",
-  "dependencies": {
-    "debug" : "~1.0.1"
-  },
-  "scripts": {
-    "test": "testgroups"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git://github.com/arjunmehta/node-samsaara-groups.git"
-  },
-  "keywords": [
-    "samsaara",
-    "groups"
-  ],
-  "devDependencies": {
-    "mocha-phantomjs": "*",
-    "express": "~4.0.0",
-    "mocha": "*",
-    "chai": "*",
-    "samsaara": "git://github.com/arjunmehta/node-samsaara.git"
-  },
-  "scripts": {
-    "test": "chmod +x ./test/test.sh && ./test/test.sh"
-  },
-  "author": "Arjun Mehta",
-  "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/arjunmehta/node-samsaara-groups/issues"
-  },
-  "homepage": "https://github.com/arjunmehta/node-samsaara-groups"
+    "name": "samsaara-groups",
+    "version": "1.0.0-beta.1",
+    "browser": "client.js",
+    "description": "Grouping module for samsaara.",
+    "main": "main.js",
+    "dependencies": {
+        "debugit": "~1.0.1"
+    },
+    "scripts": {
+        "test": "multiview [browserify test/browser_test.js '|' ghostface] [tape test/test.js] -x 1000",
+        "test-multi": "multiview [browserify test/browser_test.js '|' ghostface] [tape test/test.js]",
+        "test-single": "browserify test/browser_test.js | ghostface && tape test/test.js",
+        "test-server": "tape test/test.js"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git://github.com/arjunmehta/node-samsaara-groups.git"
+    },
+    "keywords": [
+        "samsaara",
+        "groups"
+    ],
+    "devDependencies": {
+        "browserify": "~10.2.4",
+        "es5-shim": "~4.1.10",
+        "ghostface": "~1.4.0",
+        "multiview": "~2.2.5",
+        "phantomjs": "~1.9.18",
+        "tape": "~4.2.0",
+        "ws": "~0.8.0",
+        "samsaara": "git://github.com/arjunmehta/node-samsaara.git"
+    },
+    "author": "Arjun Mehta",
+    "license": "MIT",
+    "bugs": {
+        "url": "https://github.com/arjunmehta/node-samsaara-groups/issues"
+    },
+    "homepage": "https://github.com/arjunmehta/node-samsaara-groups"
 }
