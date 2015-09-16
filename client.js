@@ -25,24 +25,26 @@ module.exports = {
 
         samsaara.createNamespace('samsaaraGroups', this.exposedMethods);
 
-        extender.addCoreMethods(this.coreMethods);
+        extender.addCoreObjects(this.coreObjects);
         extender.addMessageRoutes(this.messageRoutes);
 
         return this;
     },
 
-    coreMethods: {
+    coreObjects: {
         groups: groups
     },
 
     exposedMethods: {
         addedToGroup: function(groupName) {
             groups[groupName] = true;
-            samsaara.emit('joined group', groupName);
+            samsaara.emit('added to group', groupName);
+            debug('Added to group', groupName);
         },
         removedFromGroup: function(groupName) {
             groups[groupName] = false;
-            samsaara.emit('left group', groupName);
+            samsaara.emit('removed from group', groupName);
+            debug('Removed from group', groupName);
         }
     },
 
@@ -55,7 +57,5 @@ module.exports = {
                 executionController.executeFunction(connection, connection, parsedPacket);
             }
         }
-    },
-
-    finalize: function() {}
+    }
 };
