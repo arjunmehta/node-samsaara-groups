@@ -6,7 +6,7 @@
 
 var debug = require('debugit').add('samsaara:groups');
 
-var Group = require('./lib/group');
+var Group;
 var groups = {};
 
 
@@ -15,6 +15,8 @@ module.exports = {
     name: 'groups',
 
     initialize: function(extender, capability, options) {
+
+        Group = require('./lib/group').initialize(extender.core, extender.execute);
 
         extender.addCoreMethods(this.coreMethods);
         extender.addModuleMethods(this.moduleMethods);
