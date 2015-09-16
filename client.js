@@ -52,9 +52,11 @@ module.exports = {
         GRP: function(connection, headerbits, incomingPacket) {
             var parsedPacket = parser.parsePacket(incomingPacket);
 
-            if (parsedPacket !== undefined && parsedPacket.func !== undefined) {
-                parsedPacket.sender = connection.id;
-                executionController.executeFunction(connection, connection, parsedPacket);
+            if (parsedPacket !== undefined && parsedPacket.ns === 'samsaaraGroups') {
+                if (parsedPacket.func !== undefined) {
+                    parsedPacket.sender = connection.id;
+                    executionController.executeFunction(connection, connection, parsedPacket);
+                }
             }
         }
     }
