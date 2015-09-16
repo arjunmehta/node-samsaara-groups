@@ -18,7 +18,7 @@ module.exports = {
 
         Group = require('./lib/group').initialize(extender.core, extender.execute);
 
-        extender.addCoreMethods(this.coreMethods);
+        extender.addCoreObjects(this.coreObjects);
         extender.addModuleMethods(this.moduleMethods);
         extender.addConnectionInitialization(this.connectionInitialization, {
             forced: true
@@ -32,7 +32,7 @@ module.exports = {
         return this;
     },
 
-    coreMethods: {
+    coreObjects: {
         group: group,
         createGroup: createGroup
     },
