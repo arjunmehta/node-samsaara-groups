@@ -1,79 +1,74 @@
-var http = require('http');
-var path = require('path');
-
-var express = require('express');
-var app = express();
-
-var server = http.createServer(app);
-
-
-app.use("/", express.static( path.resolve(__dirname) ));
-
+var debugit = require('debugit').enable();
 
 var samsaara = require('samsaara');
-var groups = require('../main.js');
+var groups = require('../main');
 
-samsaara.use(groups());
+var WebSocketServer = require('ws').Server;
+var test = require('tape').test;
 
-var samsaaraOpts = {
-  socketPath: "/samsaaraTest",
-  heartBeatThreshold: 11000
-};
+var wss = new WebSocketServer({
+    port: 8080
+});
 
-
-samsaara.initialize(server, app, samsaaraOpts);
-
-samsaara.createGroup("testGroupA");
-samsaara.createGroup("testGroupB");
-samsaara.createGroup("testGroupBB");
-
-var test = {};
-
-samsaara.createNamespace("test", test);
+var connection;
 
 
-test.sendToAll = function(arg, callBack){
+test('Samsaara Server Exists', function(t) {
+    t.equal(typeof samsaara, 'object');
+    t.end();
+});
 
-  var count = 0;
+test('Samsaara can load Groups middleware', function(t) {
+    samsaara.use(groups);
+    t.end();
+});
 
-  samsaara.group("everyone").execute("singleMessage", arg, function(argg){
-    count++;
-    // console.log("Count", count, samsaara.group("everyone").count);
-    if(count === samsaara.group("everyone").count){
-      if(typeof callBack === "function") callBack(argg);
-    }
-  });  
-};
+test('Samsaara can initialize', function(t) {
+    var initialized = samsaara.initialize();
+    t.equal(initialized, samsaara);
+    t.end();
+});
+
+test('Samsaara initializes a connection', function(t) {
+    wss.on('connection', function(ws) {
+        connection = samsaara.newConnection(ws);
+        connection.on('initialized', function(success) {
+            t.equal(success, true);
+            t.end();
+        });
+    });
+});
+
+// test('Samsaara executes an exposed client method and receives a callback', function(t) {
+//     connection.execute('testMethod')('testing123', function(successBool, successString, successArray, successObject) {
+//         t.equal(successBool, true);
+//         t.equal(successString, 'success');
+//         t.equal(Array.isArray(successArray), true);
+//         t.equal(successArray[0], true);
+//         t.equal(successArray[1], 'success');
+//         t.equal(Array.isArray(successArray[2]), true);
+//         t.equal(typeof successArray[2][0], 'object');
+//         t.equal(successArray[2][0].success, true);
+//         t.equal(typeof successObject, 'object');
+//         t.equal(successObject.successFactor, 400);
+//         t.end();
+//     });
+// });
+
+// test('Samsaara double call back', function(t) {
+//     connection.execute('doubleCallback')(function(cb) {
+//         cb(function() {
+//             t.end();
+//         });
+//     });
+// });
 
 
+test('Close Test', function(t) {
+    wss.close();
+    t.end();
+});
 
-test.sendToGroupB = function(arg, callBack){
-
-  var count = 0;
-
-  samsaara.group("testGroupB").execute("singleMessage", arg, function(argg){
-    count++;
-    // console.log("Count", count, samsaara.group("testGroupB").count);
-    if(count === samsaara.group("testGroupB").count){
-      if(typeof callBack === "function") callBack(argg);
-    }
-  });  
-};
-
-
-
-test.getGroups = function(callBack){
-  // console.log("Testing Get Groups", this);
-  if(typeof callBack === "function") callBack(this.groups);
-};
-
-test.groupMessage = function(groupName, callBack){
-  samsaara.group(groupName).execute("clientGroupMessageWCallBack", function(received){
-    if(typeof callBack === "function") callBack(received);
-  });
-};
-
-samsaara.expose(test);
-
-
-server.listen(9999);
+process.on('exit', function() {
+    wss.close();
+});
