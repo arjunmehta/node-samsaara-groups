@@ -164,7 +164,3 @@ test('Close Test', function(t) {
         t.end();
     });
 });
-
-process.on('exit', function() {
-    wss.close();
-});
