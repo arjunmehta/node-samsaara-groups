@@ -8,7 +8,7 @@ var debug = require('debugit').add('samsaara:groups');
 
 var samsaara;
 var parser;
-var executionController;
+var executeFunction;
 
 var groups = {};
 
@@ -21,7 +21,7 @@ module.exports = {
 
         samsaara = extender.core;
         parser = extender.parser;
-        executionController = extender.executionController;
+        executeFunction = extender.executeFunction;
 
         samsaara.createNamespace('samsaaraGroups', this.exposedMethods);
 
@@ -50,12 +50,13 @@ module.exports = {
 
     messageRoutes: {
         GRP: function(connection, headerbits, incomingPacket) {
+
             var parsedPacket = parser.parsePacket(incomingPacket);
 
-            if (parsedPacket !== undefined && parsedPacket.ns === 'samsaaraGroups') {
+            if (parsedPacket !== undefined) {
                 if (parsedPacket.func !== undefined) {
                     parsedPacket.sender = connection.id;
-                    executionController.executeFunction(connection, connection, parsedPacket);
+                    executeFunction(connection, connection, parsedPacket);
                 }
             }
         }
