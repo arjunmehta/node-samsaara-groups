@@ -8,8 +8,8 @@
         "debugit": "~1.0.1"
     },
     "scripts": {
-        "test": "multiview [browserify test/clientA.js '|' ghostface] [tape test/test.js] -x 1000",
-        "test-multi": "multiview [browserify test/clientA.js '|' ghostface] [tape test/test.js]"
+        "test": "multiview [browserify test/clientB.js '|' ghostface] [browserify test/clientB.js '|' ghostface] [browserify test/clientB.js '|' ghostface] [browserify test/clientC.js '|' ghostface] [browserify test/clientC.js '|' ghostface] [tape test/test.js] -x 1000",
+        "test-multi": "multiview [browserify test/clientB.js '|' ghostface] [browserify test/clientB.js '|' ghostface] [browserify test/clientB.js '|' ghostface] [browserify test/clientC.js '|' ghostface] [browserify test/clientC.js '|' ghostface] [tape test/test.js]"
     },
     "repository": {
         "type": "git",
