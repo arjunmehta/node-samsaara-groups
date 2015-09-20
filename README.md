@@ -1,11 +1,14 @@
-samsaara-groups
-======================
+#samsaara-groups
 
-Connection group module for samsaara. Use this module to:
+[![Build Status](https://travis-ci.org/arjunmehta/node-samsaara.svg?branch=master)](https://travis-ci.org/arjunmehta/node-samsaara)
 
-- **Create groups of connections.**
+Connection group module for [samsaara](https://www.github.com/arjunmehta/node-samsaara). Use this module to:
+
+- **The object-oriented creation of samsaara connection groups.**
 - **Add and remove individual samsaara connections to groups.**
-- **Broadcast the execute of methods on all connections or those within specific groups.**
+- **Broadcast the execution of methods on all connections or those within specific groups.**
+
+**Note:** *Use of this module requires familiarity with [samsaara](https://www.github.com/arjunmehta/node-samsaara) (of course). It's amazing and you'll love it. Get familiarized.*
 
 ## Installation
 
@@ -44,7 +47,7 @@ samsaara.on('removed from group', function(groupName){
 ```
 
 
-### Core (Server) Side
+### Server Side
 All new connections automatically get added to the group `all`.
 
 ```javascript
@@ -86,7 +89,7 @@ samsaara.expose({
 });
 ```
 
-The logic you employ to filter connections from joining special groups is up to you. For example, maybe you require a token to join:
+The logic you employ to filter connections from joining special groups is entirely up to you. For example, maybe you require a token to join a group:
 
 ```javascript
 samsaara.expose({
@@ -99,12 +102,11 @@ samsaara.expose({
 ```
 
 #### Executing Methods on Client Groups
-
-Now you can execute exposed methods on clients by group.
+Once you've found a way to add various groups, you can broadcast the execution of exposed methods by group.
 
 ```javascript
-samsaara.group('groupA').execute('exposedMethodOnGroupA')
-samsaara.group('groupB').execute('exposedMethodOnGroupB')
+samsaara.group('groupA').execute('exposedMethodOnGroupA')()
+samsaara.group('groupB').execute('exposedMethodOnGroupB')()
 ```
 
 
