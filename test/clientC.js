@@ -12,6 +12,9 @@ var fences = {};
 
 var ws;
 
+
+// test setup
+
 samsaara.on('added to group', function(groupName) {
     debug('Added to Group', groupName);
     fences['Add to Group'].hit(groupName);
@@ -34,6 +37,9 @@ samsaara.expose({
         fences['Wait to Continue'].hit('continue');
     }
 });
+
+
+// tests
 
 test('Samsaara Client Exists', function(t) {
     t.equal(typeof samsaara, 'object');

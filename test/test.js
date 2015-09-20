@@ -17,6 +17,8 @@ var wss = new WebSocketServer({
 });
 
 
+// test setup
+
 samsaara.on('connection', function(connection) {
     debug('New Connection', connection.name);
     fences['New connections'].hit(connection);
@@ -38,7 +40,7 @@ samsaara.expose({
 });
 
 
-// Tests
+// tests
 
 test('Samsaara Server Exists', function(t) {
     t.equal(typeof samsaara, 'object');
@@ -71,7 +73,6 @@ test('Wait for X Connections', function(t) {
     });
 });
 
-
 test('Create Groups', function(t) {
     samsaara.createGroup('groupA');
     samsaara.createGroup('groupB');
@@ -84,14 +85,12 @@ test('Create Groups', function(t) {
     t.end();
 });
 
-
 test('Hold Test', function(t) {
     setTimeout(function() {
         samsaara.group('all').execute('continueTest')();
         t.end();
     }, 500);
 });
-
 
 test('Wait till Groups Mounted', function(t) {
 
@@ -103,19 +102,8 @@ test('Wait till Groups Mounted', function(t) {
         t.equal(Object.keys(samsaara.group('groupB').members).length, 3);
         t.equal(Object.keys(samsaara.group('groupC').members).length, 2);
         t.end();
-        // setTimeout(function() {
-        //     samsaara.group('all').execute('continueTest')();
-        // }, 500);
     });
 });
-
-
-// test('Hold Test', function(t) {
-//     setTimeout(function() {
-//         samsaara.group('all').execute('continueTest')();
-//         t.end();
-//     }, 500);
-// });
 
 test('Execute on Groups', function(t) {
 
