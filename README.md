@@ -113,4 +113,4 @@ samsaara.group('groupB').execute('exposedMethodOnGroupB')()
 ## License
 The MIT License (MIT)
 
-Copyright (c) 2014 Arjun Mehta
+Copyright (c) 2015 Arjun Mehta
