@@ -1,4 +1,4 @@
-#samsaara-groups
+#samsaara groups
 
 [![Build Status](https://travis-ci.org/arjunmehta/node-samsaara-groups.svg?branch=master)](https://travis-ci.org/arjunmehta/node-samsaara-groups)
 
