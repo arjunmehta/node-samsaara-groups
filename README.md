@@ -33,7 +33,7 @@ samsaara
   })
 ```
 
-#### Client Event Listeners
+#### Client event listeners
 Set listeners to do something when the client has been `added to group` or `removed from group`.
 
 ```javascript
@@ -66,7 +66,7 @@ samsaara
 samsaara.group('all').execute('testMethod')()
 ```
 
-#### Create Custom Groups
+#### Create custom groups
 
 ```javascript
 var groupA = samsaara.createGroup('groupA')
@@ -75,7 +75,7 @@ var groupB = samsaara.createGroup('groupB')
 
 Note that the `createGroup` method returns the group if you'd like to chain commands.
 
-#### Adding and Removing Connections to/from Groups
+#### Adding and removing connections to/from groups
 Only the server can add connections to groups. Below is a very straightforward example of an exposed method to let connections join/leave a group of their choosing.
 
 ```javascript
@@ -101,7 +101,7 @@ samsaara.expose({
 });
 ```
 
-#### Executing Methods on Client Groups
+#### Executing methods on client groups
 Once you've found a way to add various groups, you can broadcast the execution of exposed methods by group.
 
 ```javascript
