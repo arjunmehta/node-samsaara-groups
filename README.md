@@ -1,6 +1,6 @@
 #samsaara-groups
 
-[![Build Status](https://travis-ci.org/arjunmehta/node-samsaara.svg?branch=master)](https://travis-ci.org/arjunmehta/node-samsaara)
+[![Build Status](https://travis-ci.org/arjunmehta/node-samsaara-groups.svg?branch=master)](https://travis-ci.org/arjunmehta/node-samsaara-groups)
 
 Connection group module for [samsaara](https://www.github.com/arjunmehta/node-samsaara). Use this module to:
 
